@@ -1,50 +1,51 @@
 import express from "express";
-import validateRequest from "../../middlewares/validateRequest";
-import UserController from "./user.controller";
-import { userValidation } from "./user.validation";
 import auth from "../../middlewares/auth";
-import { Role } from "@prisma/client";
-
-import { fileUploader } from "../../../helpars/fileUploaderS3";
-// import { parseBodyData } from '../../middlewares/parseBodyData';
-
+import validateRequest from "../../middlewares/validateRequest";
+import { UserValidations } from "./user.validation";
+import { UserControllers } from "./user.controller";
+import parseBodyData from "../../../helpars/parseBodyData";
+import { fileUploader } from "../../../helpars/fileUploader";
 const router = express.Router();
 
-router.post(
-  "/create",
-  validateRequest(userValidation.createUserSchema),
-  UserController.createUser
-);
+router.post("/register", UserControllers.registerUser);
 
-// get new members
-router.get("/new-members", auth(), UserController.getNewMembers);
+router.get("/", UserControllers.getAllUsers);
+
+router.get("/me", auth("USER", "ADMIN"), UserControllers.getMyProfile);
+
+router.get("/:id", auth(), UserControllers.getUserDetails);
+router.put(
+  "/update-profile",
+  auth("USER", "ADMIN"),
+  fileUploader.uploadprofileImage,
+  parseBodyData,
+  UserControllers.updateMyProfile
+);
 
 router.put(
-  "/update",
-  auth(Role.SUPER_ADMIN),
-  // validateRequest(userValidation.createUserSchema),
-  UserController.updateUser
+  "/update-user/:id",
+  auth("ADMIN"),
+  UserControllers.updateUserRoleStatus
 );
 
-// update user profile image
-router.patch(
-  "/profile-img-update/:id",
-  auth(),
-  fileUploader.uploadProfileImage,
-  UserController.updateUserProfileImage
+router.delete("/:id", auth("ADMIN"), UserControllers.deleteUser);
+
+router.post(
+  "/forgot-password",
+  validateRequest(UserValidations.forgotPassword),
+  UserControllers.forgotPassword
 );
 
-router.get("/", UserController.getAllUsers);
-router.get("/:id", UserController.getUserById);
+router.post(
+  "/verify-otp",
+  validateRequest(UserValidations.verifyOtp),
+  UserControllers.verifyOtp
+);
 
-// // update user first name and last name
-// router.put(
-//   "/update",
-//   auth(),
-//   // validateRequest(userValidation.createUserSchema),
-//   UserController.updateUser
-// );
+router.post(
+  "/change-password",
+  validateRequest(UserValidations.changePassword),
+  UserControllers.changePassword
+);
 
-router.delete("/:id", auth(Role.ADMIN), UserController.deleteUser);
-
-export const UserRoute = router;
+export const UserRouters = router;

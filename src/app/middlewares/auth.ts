@@ -1,15 +1,14 @@
-import { NextFunction, Request, Response } from 'express';
+import { NextFunction, Request, Response } from "express";
 
-import config from '../../config';
-import { JwtPayload, Secret } from 'jsonwebtoken';
+import { JwtPayload, Secret } from "jsonwebtoken";
+import config from "../../config";
 
-import httpStatus from 'http-status';
+import httpStatus from "http-status";
 
-import prisma from '../../shared/prisma';
-import { UserStatus } from '@prisma/client';
+import prisma from "../../shared/prisma";
 
-import ApiError from '../../errors/ApiErrors';
-import { jwtHelpers } from '../../helpars/jwtHelpers';
+import ApiError from "../../errors/ApiErrors";
+import { jwtHelpers } from "../../helpars/jwtHelpers";
 
 const auth = (...roles: string[]) => {
   return async (
@@ -21,7 +20,7 @@ const auth = (...roles: string[]) => {
       const token = req.headers.authorization;
 
       if (!token) {
-        throw new ApiError(httpStatus.UNAUTHORIZED, 'You are not authorized!');
+        throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!");
       }
 
       const verifiedUser = jwtHelpers.verifyToken(
@@ -30,7 +29,7 @@ const auth = (...roles: string[]) => {
       );
 
       if (!verifiedUser?.email) {
-        throw new ApiError(httpStatus.UNAUTHORIZED, 'You are not authorized!');
+        throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!");
       }
       const { id } = verifiedUser;
 
@@ -40,14 +39,14 @@ const auth = (...roles: string[]) => {
         },
       });
       if (!user) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'User not found!');
+        throw new ApiError(httpStatus.NOT_FOUND, "User not found!");
       }
 
       // if (user.isDeleted == true) {
       //   throw new ApiError(httpStatus.BAD_REQUEST, "This user is deleted ! ");
       // }
 
-      // if (user.UserStatus === UserStatus.BLOCKED) {
+      // if (user.status === status.BLOCKED) {
       //   throw new ApiError(httpStatus.FORBIDDEN, 'Your account is blocked!');
       // }
 
@@ -56,7 +55,7 @@ const auth = (...roles: string[]) => {
       if (roles.length && !roles.includes(verifiedUser.role)) {
         throw new ApiError(
           httpStatus.FORBIDDEN,
-          'Forbidden! You are not authorized!'
+          "Forbidden! You are not authorized!"
         );
       }
       next();
@@ -75,7 +74,7 @@ export const checkOTP = async (
     const token = req.headers.authorization;
 
     if (!token) {
-      throw new ApiError(httpStatus.UNAUTHORIZED, 'You are not authorized!');
+      throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!");
     }
 
     const verifiedUser = jwtHelpers.verifyToken(
@@ -84,7 +83,7 @@ export const checkOTP = async (
     );
 
     if (!verifiedUser?.email) {
-      throw new ApiError(httpStatus.UNAUTHORIZED, 'You are not authorized!');
+      throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!");
     }
     const { id } = verifiedUser;
 
@@ -94,14 +93,14 @@ export const checkOTP = async (
       },
     });
     if (!user) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'User not found!');
+      throw new ApiError(httpStatus.NOT_FOUND, "User not found!");
     }
 
     // if (user.isDeleted == true) {
     //   throw new ApiError(httpStatus.BAD_REQUEST, "This user is deleted ! ");
     // }
 
-    // if (user.UserStatus === UserStatus.BLOCKED) {
+    // if (user.status === status.BLOCKED) {
     //   throw new ApiError(httpStatus.FORBIDDEN, 'Your account is blocked!');
     // }
 

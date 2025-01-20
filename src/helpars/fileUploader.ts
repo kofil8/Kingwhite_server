@@ -1,31 +1,24 @@
-import multer from 'multer';
-import path from 'path';
-
+import multer from "multer";
+import path from "path";
+// import prisma from '../shared/prisma';
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     // cb(null, path.join( "/var/www/uploads"));
-    cb(null, path.join(process.cwd(), 'uploads'));
+    cb(null, path.join(process.cwd(), "uploads"));
   },
-  filename: function (req, file, cb) {
-    cb(null, `${Date.now()}-${file.originalname}`);
+  filename: async function (req, file, cb) {
+    cb(null, file.originalname);
   },
 });
 
 const upload = multer({ storage: storage });
 
 // upload single image
-const uploadProfilePicture = upload.single('profilePicture');
-
-const uploadBirthdayWishImage = upload.single('birthdayImage');
-// upload multiple image
-const uploadMultipleMedia = upload.fields([
-  { name: 'images', maxCount: 10 },
-  { name: 'videos', maxCount: 5 },
-]);
+const uploadprofileImage = upload.single("profileImage");
+const uploadPostImage = upload.single("postImage");
 
 export const fileUploader = {
   upload,
-  uploadMultipleMedia,
-  uploadProfilePicture,
-  uploadBirthdayWishImage,
+  uploadprofileImage,
+  uploadPostImage,
 };

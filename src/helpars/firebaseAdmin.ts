@@ -1,10 +1,8 @@
-import admin from "firebase-admin"
-import { serviceAccount } from "../config/serviceAccount"
-
-// import { serviceAccount } from "../config/serviceAccount"
+import admin from "firebase-admin";
+import { serviceAccount } from "../config/serviceAccount";
 
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as unknown as string)
-})
+  credential: admin.credential.cert(serviceAccount as unknown as string),
+});
 
-export default admin
+export default admin;

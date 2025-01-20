@@ -1,7 +1,6 @@
-import httpStatus from 'http-status';
-import ApiError from '../../../errors/ApiErrors';
-import prisma from '../../../shared/prisma';
-import { UpdateUserInput } from '../User/user.interface';
+import httpStatus from "http-status";
+import ApiError from "../../../errors/ApiErrors";
+import prisma from "../../../shared/prisma";
 
 // // update user first name and last name
 // const updateUser = async (email: string, updates: UpdateUserInput) => {
@@ -28,7 +27,7 @@ import { UpdateUserInput } from '../User/user.interface';
 //     select: {
 //       id: true,
 //       email: true,
-//       UserStatus: true,
+//       status: true,
 //       profileImage: true,
 //       createdAt: true,
 //       updatedAt: true,
@@ -49,7 +48,7 @@ const updateUserProfileImage = async (
   });
 
   if (!existingUser) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
 
   // Update user's profile image

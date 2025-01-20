@@ -1,152 +1,128 @@
-import { Request, Response } from 'express';
-import httpStatus from 'http-status';
-import catchAsync from '../../../shared/catchAsync';
-import sendResponse from '../../../shared/sendResponse';
-import { UserService } from './user.service';
-import ApiError from '../../../errors/ApiErrors';
+import httpStatus from "http-status";
+import { UserServices } from "./user.service";
+import { Request, Response } from "express";
+import sendResponse from "../../../utils/sendResponse";
+import catchAsync from "../../../utils/catchAsync";
 
-const createUser = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserService.createUser(req.body);
+const registerUser = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const result = await UserServices.registerUserIntoDB(payload);
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
-    success: true,
-    message: 'User information created successfully',
+    message: "User registered successfully",
     data: result,
   });
 });
 
-const checkUsername = catchAsync(async (req: Request, res: Response) => {
-  const { firstName, lastName } = req.body;
-
-  if (!firstName || !lastName) {
-    return sendResponse(res, {
-      statusCode: httpStatus.BAD_REQUEST,
-      success: false,
-      message: 'First name and last name are required',
-    });
-  }
-
-  const userName = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
-  const isUsernameTaken = await UserService.checkUsernameExists(userName);
-
+const getAllUsers = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserServices.getAllUsersFromDB();
   sendResponse(res, {
     statusCode: httpStatus.OK,
-    success: true,
-    message: isUsernameTaken
-      ? 'Username is already taken'
-      : 'Username is available',
-    data: { userName, isUsernameTaken },
+    message: "Users Retrieve successfully",
+    data: result,
   });
 });
 
-const getUserById = catchAsync(async (req: Request, res: Response) => {
+const getMyProfile = catchAsync(async (req: Request, res: Response) => {
+  const id = req.user.id;
+  const result = await UserServices.getMyProfileFromDB(id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    message: "Profile retrieved successfully",
+    data: result,
+  });
+});
+
+const getUserDetails = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-
-  const user = await UserService.getUserById(id);
+  const result = await UserServices.getUserDetailsFromDB(id);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
-    success: true,
-    message: 'User fetched successfully',
-    data: { ...user, password: undefined },
+    message: "User details retrieved successfully",
+    data: result,
   });
 });
 
-const getAllUsers = catchAsync(async (_req: Request, res: Response) => {
-  const users = await UserService.getAllUsers();
-
-  const data = users.map((user) => ({ ...user, password: undefined }));
+const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
+  const id = req.user.id;
+  const payload = req.body.bodyData;
+  const file = req.file as any;
+  const result = await UserServices.updateMyProfileIntoDB(id, payload, file);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
-    success: true,
-    message: 'Users fetched successfully',
-    data,
+    message: "User profile updated successfully",
+    data: result,
+  });
+});
+
+const updateUserRoleStatus = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await UserServices.updateUserRoleStatusIntoDB(id, req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    message: "User updated successfully",
+    data: result,
   });
 });
 
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.params.id;
-  const loggedId = req.user.id;
-
-  await UserService.deleteUser(userId, loggedId);
-
-  sendResponse(res, {
-    success: true,
-    statusCode: 200,
-    message: 'User deleted successfully',
-  });
-});
-
-const getNewMembers = catchAsync(async (req: Request, res: Response) => {
-  const newMembers = await UserService.getNewMembers();
+  const id = req.user.id;
+  const result = await UserServices.deleteUser(id);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
-    success: true,
-    message: 'New members fetched successfully',
-    data: newMembers,
-  });
-});
-
-// update user first name and last name
-const updateUser = catchAsync(async (req: Request, res: Response) => {
-  const user = req.user;
-  const data = req.body;
-
-  const result = await UserService.updateUser(user?.email, data);
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'User information updated successfully',
+    message: "User deleted successfully",
     data: result,
   });
 });
 
-const updateUserProfileImage = catchAsync(
-  async (req: Request, res: Response) => {
-    const userId = req.user?.id;
+const forgotPassword = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserServices.forgotPassword(req.body);
 
-    if (!userId) {
-      throw new ApiError(httpStatus.UNAUTHORIZED, 'Unauthorized access');
-    }
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    message: "OTP sent successfully",
+    data: result,
+  });
+});
 
-    const profileImage = req.file;
-    let imageUrl: string | undefined;
+const verifyOtp = catchAsync(async (req: Request, res: Response) => {
+  const email = req.body.email;
+  const otp = req.body.otp;
+  const result = await UserServices.verifyOtp({ email, otp });
 
-    if (profileImage) {
-      imageUrl = `${req.protocol}://${req.get('host')}/uploads/profile/${profileImage.filename}`;
-    }
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    message: "OTP verified successfully",
+    data: result,
+  });
+});
 
-    if (!imageUrl) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'No profile image uploaded');
-    }
+const changePassword = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const result = await UserServices.changePassword(payload);
 
-    const updatedUser = await UserService.updateUserProfileImage(
-      userId,
-      imageUrl
-    );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    message: "Password changed successfully",
+    data: result,
+  });
+});
 
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'User profile image updated successfully',
-      data: updatedUser,
-    });
-  }
-);
-
-const UserController = {
-  createUser,
+export const UserControllers = {
+  registerUser,
   getAllUsers,
+  getMyProfile,
+  getUserDetails,
+  updateMyProfile,
+  updateUserRoleStatus,
   deleteUser,
-  getUserById,
-  checkUsername,
-  getNewMembers,
-  updateUser,
-  updateUserProfileImage,
+  forgotPassword,
+  verifyOtp,
+  changePassword,
 };
-
-export default UserController;

@@ -12,9 +12,10 @@ generator client {
 //  ENUMS
 // ---------------------------------------------------------
 
-enum UserStatus {
+enum status {
   ACTIVE
   INACTIVE
+  BLOCKED
 }
 
 enum Role {
@@ -34,19 +35,20 @@ enum NotificationType {
 //  MODELS
 // ---------------------------------------------------------
 model User {
-  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
   firstName    String?
   lastName     String?
-  email        String     @unique
+  email        String    @unique
   password     String
   userName     String
   dateOfBirth  String?
-  UserStatus   UserStatus @default(ACTIVE)
+  status       status    @default(ACTIVE)
   profileImage Json?
-  isAgreed     Boolean    @default(false)
+  isAgreed     Boolean   @default(false)
   otp          String?
   otpExpiry    DateTime?
 
+  fcmToken  String?
   hexCode   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -56,16 +58,23 @@ model User {
   profiles Profile[]
   goals    Goal[]
 
-  isOnline Boolean @default(false)
-
-  notificationsFrom Notifications[]    @relation("notificationFrom")
-  notificationsFor  Notifications[]    @relation("notificationFor")
-  Investment        Investment[]
-  SavingsPlan       SavingsPlan[]
-  Notification      Notification[]
-  UserSubscription  UserSubscription[]
+  isOnline         Boolean            @default(false)
+  Investment       Investment[]
+  SavingsPlan      SavingsPlan[]
+  notifications    Notifications[]    @relation("Notifications")
+  UserSubscription UserSubscription[]
 
   @@map("users")
+}
+
+model Otp {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String
+  otp       Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("otps")
 }
 
 model Account {
@@ -148,18 +157,6 @@ model Goal {
   @@map("goals")
 }
 
-model Notification {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-  message   String
-  read      Boolean  @default(false)
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("notifications")
-}
-
 model SubscriptionPlan {
   id               String             @id @default(auto()) @map("_id") @db.ObjectId
   name             String
@@ -187,19 +184,14 @@ model UserSubscription {
 }
 
 model Notifications {
-  id               String            @id @default(auto()) @map("_id") @db.ObjectId
-  title            String
-  body             String
-  isRead           Boolean           @default(false)
-  receiverId       String?           @db.ObjectId
-  user             User?             @relation("notificationFor", fields: [receiverId], references: [id])
-  fromId           String?           @db.ObjectId
-  notificationFrom User?             @relation("notificationFrom", fields: [fromId], references: [id])
-  type             NotificationType?
-  goto             String?
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  receiverId String   @db.ObjectId
+  title      String
+  body       String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [receiverId], references: [id], name: "Notifications")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("notification")
+  @@map("notifications")
 }
