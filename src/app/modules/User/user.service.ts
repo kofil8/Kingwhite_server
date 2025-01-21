@@ -6,6 +6,9 @@ import { emailTemplate } from "../../../helpars/emailtempForOTP";
 import prisma from "../../../shared/prisma";
 import sentEmailUtility from "../../../utils/sentEmailUtility";
 import { text } from "body-parser";
+import { generateToken } from "../../../utils/generateToken";
+import config from "../../../config";
+import { Secret } from "jsonwebtoken";
 
 interface UserWithOptionalPassword extends Omit<User, "password"> {
   password?: string;
@@ -21,7 +24,10 @@ const registerUserIntoDB = async (payload: any) => {
   });
 
   if (existingUser) {
-    throw new Error("User already exists with this email");
+    throw new ApiError(
+      httpStatus.CONFLICT,
+      "User already exists with this email"
+    );
   }
 
   const user = await prisma.user.create({
@@ -217,7 +223,7 @@ const forgotPassword = async (payload: { email: string }) => {
   }
 
   // Generate OTP
-  const otp = Math.floor(100000 + Math.random() * 900000); // 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000);
 
   const emailSubject = "OTP Verification for Password Reset";
 
@@ -256,12 +262,15 @@ const forgotPassword = async (payload: { email: string }) => {
   }
 };
 
-const verifyOtp = async (payload: { email: string; otp: number }) => {
+const verifyOtp = async (payload: {
+  fcpmToken?: string;
+  email: string;
+  otp: number;
+}) => {
   // Check if the user exists
   const userData = await prisma.user.findUniqueOrThrow({
     where: {
       email: payload.email,
-      status: "ACTIVE",
     },
   });
 
@@ -276,19 +285,22 @@ const verifyOtp = async (payload: { email: string; otp: number }) => {
     },
   });
 
+  console.log(payload.otp, otpData?.otp);
+
   if (otpData?.otp !== payload.otp) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid OTP");
   }
 
-  // Update the user's status to "ACTIVE"
-  await prisma.user.update({
-    where: {
-      id: userData.id,
-    },
-    data: {
-      status: "ACTIVE",
-    },
-  });
+  if (userData.status !== "ACTIVE") {
+    await prisma.user.update({
+      where: {
+        id: userData.id,
+      },
+      data: {
+        status: "ACTIVE",
+      },
+    });
+  }
 
   // Remove the OTP after successful verification
   await prisma.otp.delete({
@@ -297,7 +309,33 @@ const verifyOtp = async (payload: { email: string; otp: number }) => {
     },
   });
 
-  return "Now you can reset your password";
+  // Update the FCM token if provided
+  if (payload?.fcpmToken) {
+    await prisma.user.update({
+      where: {
+        email: payload.email,
+      },
+      data: {
+        fcmToken: payload.fcpmToken,
+      },
+    });
+  }
+
+  // Generate an access token
+  const accessToken = generateToken(
+    {
+      id: userData.id,
+      email: userData.email as string,
+      role: userData.role,
+    },
+    config.jwt.jwt_secret as Secret,
+    config.jwt.expires_in as string
+  );
+
+  return {
+    message: "OTP verified successfully",
+    accessToken,
+  };
 };
 
 const changePassword = async (payload: any) => {

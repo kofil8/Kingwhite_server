@@ -12,7 +12,7 @@ let sentEmailUtility = async (
     smtpTransporter({
       service: "Gmail",
       auth: {
-        user: process.env.EMAIL_USER,
+        user: process.env.EMAIL,
         pass: process.env.EMAIL_PASSWORD,
       },
     })

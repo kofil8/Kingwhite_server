@@ -38,7 +38,7 @@ router.post(
 
 router.post(
   "/verify-otp",
-  validateRequest(UserValidations.verifyOtp),
+  // validateRequest(UserValidations.verifyOtp),
   UserControllers.verifyOtp
 );
 
