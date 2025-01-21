@@ -6,7 +6,7 @@ let sentEmailUtility = async (
   emailTo: string,
   EmailSubject: string,
   EmailText: string,
-  EmailHTML: string // HTML content as a parameter
+  EmailHTML: string
 ) => {
   let transporter = nodemailer.createTransport(
     smtpTransporter({
@@ -22,8 +22,8 @@ let sentEmailUtility = async (
     from: "Demo Service <no-reply@gmail.com>",
     to: emailTo,
     subject: EmailSubject,
-    text: EmailText, // Optional: Add for plain text fallback
-    html: EmailHTML, // HTML content
+    text: EmailText,
+    html: EmailHTML,
   };
 
   return await transporter.sendMail(mailOption);

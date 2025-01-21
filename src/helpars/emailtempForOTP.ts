@@ -36,7 +36,7 @@ export const emailTemplate = (otp: number, text: string) => `
     </style>
 </head>
 <body>
-    <table cellpadding="0" cellspacing="0" align="center" style="width:100%; table-layout:fixed; background-color:#f5f5f5;">
+    <table cellpadding="0" cellspacing="0" align="center" style="width:70%; table-layout:fixed; background-color:#f5f5f5;">
         <tr>
             <td align="center">
                 <table cellpadding="0" cellspacing="0" class="container" style="background-color:#ffffff; width:600px; border-collapse:collapse;">

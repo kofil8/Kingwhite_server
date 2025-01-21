@@ -1,8 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import ApiError from "../errors/ApiErrors";
 
-// Assuming AppError is your custom error class
-
 const parseBodyData = (req: Request, res: Response, next: NextFunction) => {
   if (req.body && req.body.bodyData) {
     try {

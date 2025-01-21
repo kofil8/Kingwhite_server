@@ -60,17 +60,6 @@ const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const updateUserRoleStatus = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const result = await UserServices.updateUserRoleStatusIntoDB(id, req.body);
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    message: "User updated successfully",
-    data: result,
-  });
-});
-
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
   const id = req.user.id;
   const result = await UserServices.deleteUser(id);
@@ -104,9 +93,34 @@ const verifyOtp = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const ResetOtpVerify = catchAsync(async (req: Request, res: Response) => {
+  const email = req.body.email;
+  const otp = req.body.otp;
+  const result = await UserServices.verifyResetOtp({ email, otp });
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    message: "OTP verified successfully for reset password",
+    data: result,
+  });
+});
+
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  const result = await UserServices.resetPassword({ email, password });
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    message: "Password reset successfully",
+    data: result,
+  });
+});
+
 const changePassword = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
-  const result = await UserServices.changePassword(payload);
+  const userId = req.user.id;
+  const result = await UserServices.changePassword(userId, payload);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -121,9 +135,10 @@ export const UserControllers = {
   getMyProfile,
   getUserDetails,
   updateMyProfile,
-  updateUserRoleStatus,
   deleteUser,
   forgotPassword,
+  ResetOtpVerify,
+  resetPassword,
   verifyOtp,
   changePassword,
 };

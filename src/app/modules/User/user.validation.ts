@@ -49,11 +49,19 @@ const verifyOtp = z.object({
   }),
 });
 
-const changePassword = z.object({
+const resetPassword = z.object({
   body: z.object({
     email: z.string({
       required_error: "Email is required!",
     }),
+    password: z.string({
+      required_error: "Password is required!",
+    }),
+  }),
+});
+
+const changePassword = z.object({
+  body: z.object({
     newPassword: z.string({
       required_error: "New password is required!",
     }),
@@ -64,5 +72,6 @@ export const UserValidations = {
   registerUser,
   forgotPassword,
   verifyOtp,
+  resetPassword,
   changePassword,
 };

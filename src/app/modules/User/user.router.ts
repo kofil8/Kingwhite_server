@@ -4,10 +4,17 @@ import validateRequest from "../../middlewares/validateRequest";
 import { UserValidations } from "./user.validation";
 import { UserControllers } from "./user.controller";
 import parseBodyData from "../../../helpars/parseBodyData";
-import { fileUploader } from "../../../helpars/fileUploader";
+import { fileUploader } from "../../../helpars/fileUploaderS3";
+
 const router = express.Router();
 
 router.post("/register", UserControllers.registerUser);
+
+router.post(
+  "/verify-otp",
+  validateRequest(UserValidations.verifyOtp),
+  UserControllers.verifyOtp
+);
 
 router.get("/", UserControllers.getAllUsers);
 
@@ -17,15 +24,9 @@ router.get("/:id", auth(), UserControllers.getUserDetails);
 router.put(
   "/update-profile",
   auth("USER", "ADMIN"),
-  fileUploader.uploadprofileImage,
+  fileUploader.uploadProfileImage,
   parseBodyData,
   UserControllers.updateMyProfile
-);
-
-router.put(
-  "/update-user/:id",
-  auth("ADMIN"),
-  UserControllers.updateUserRoleStatus
 );
 
 router.delete("/:id", auth("ADMIN"), UserControllers.deleteUser);
@@ -37,15 +38,22 @@ router.post(
 );
 
 router.post(
-  "/verify-otp",
-  // validateRequest(UserValidations.verifyOtp),
-  UserControllers.verifyOtp
+  "/change-password",
+  validateRequest(UserValidations.changePassword),
+  auth(),
+  UserControllers.changePassword
 );
 
 router.post(
-  "/change-password",
-  validateRequest(UserValidations.changePassword),
-  UserControllers.changePassword
+  "/reset-otp",
+  validateRequest(UserValidations.verifyOtp),
+  UserControllers.ResetOtpVerify
+);
+
+router.post(
+  "/reset-password",
+  validateRequest(UserValidations.resetPassword),
+  UserControllers.resetPassword
 );
 
 export const UserRouters = router;

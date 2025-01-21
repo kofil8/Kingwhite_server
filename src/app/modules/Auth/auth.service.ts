@@ -33,12 +33,12 @@ const loginUserFromDB = async (payload: {
   // Generate OTP
   const otp = Math.floor(100000 + Math.random() * 900000); // 6-digit OTP
 
-  const emailSubject = "OTP Verification for Registration";
+  const emailSubject = "OTP Verification for Login";
 
   // Plain text version
   const emailText = `Your OTP is: ${otp}`;
 
-  const textForLogin = `Welcome back, ${userData.firstName}! Please use the following OTP to login to your account`;
+  const textForLogin = `Welcome back! Please use the following OTP to login to your account`;
 
   // HTML content for the email design
   const emailHTML = emailTemplate(otp, textForLogin);
@@ -46,10 +46,14 @@ const loginUserFromDB = async (payload: {
   // Send email with both plain text and HTML
   await sentEmailUtility(payload.email, emailSubject, emailText, emailHTML);
 
+  // Set OTP expiry date (e.g., 10 minutes from now)
+  const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+
   await prisma.otp.create({
     data: {
       email: payload.email,
       otp,
+      expiry: otpExpiry,
     },
   });
 
@@ -57,4 +61,31 @@ const loginUserFromDB = async (payload: {
   return "Please check your email for OTP";
 };
 
-export const AuthServices = { loginUserFromDB };
+const logoutUser = async (id: string) => {
+  const userData = await prisma.user.findUnique({
+    where: {
+      id: id,
+    },
+  });
+
+  if (!userData) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "User not found");
+  }
+
+  if (userData.isOnline === false) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "User is already logged out");
+  }
+
+  await prisma.user.update({
+    where: {
+      id: id,
+    },
+    data: {
+      isOnline: false,
+      fcmToken: null,
+    },
+  });
+  return;
+};
+
+export const AuthServices = { loginUserFromDB, logoutUser };
