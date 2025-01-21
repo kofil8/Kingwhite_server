@@ -106,9 +106,9 @@ const ResetOtpVerify = catchAsync(async (req: Request, res: Response) => {
 });
 
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
-  const email = req.body.email;
   const password = req.body.password;
-  const result = await UserServices.resetPassword({ email, password });
+  const accessToken = req.headers.authorization as string;
+  const result = await UserServices.resetPassword(accessToken, { password });
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

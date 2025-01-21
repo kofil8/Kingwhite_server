@@ -7,8 +7,9 @@ import prisma from "../../../shared/prisma";
 import sentEmailUtility from "../../../utils/sentEmailUtility";
 import { generateToken } from "../../../utils/generateToken";
 import config from "../../../config";
-import { Secret } from "jsonwebtoken";
+import { Secret, verify } from "jsonwebtoken";
 import { generateTokenReset } from "../../../utils/generateTokenForReset";
+import { jwtHelpers } from "../../../helpars/jwtHelpers";
 
 interface UserWithOptionalPassword extends Omit<User, "password"> {
   password?: string;
@@ -374,11 +375,26 @@ const verifyResetOtp = async (payload: { email: string; otp: number }) => {
   };
 };
 
-const resetPassword = async (payload: any) => {
+const resetPassword = async (
+  accessToken: string,
+  payload: { password: string }
+) => {
+  if (!accessToken) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!");
+  }
+
+  const verifiedUser = jwtHelpers.verifyToken(
+    accessToken,
+    config.jwt.jwt_secret as Secret
+  );
+
+  if (!verifiedUser?.email) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!");
+  }
+
   const userData = await prisma.user.findUnique({
     where: {
-      email: payload.email,
-      status: "ACTIVE",
+      email: verifiedUser?.email,
     },
   });
 
@@ -386,15 +402,11 @@ const resetPassword = async (payload: any) => {
     throw new ApiError(httpStatus.BAD_REQUEST, "User not found");
   }
 
-  if (userData.status !== "ACTIVE") {
-    throw new ApiError(httpStatus.BAD_REQUEST, "User is not active");
-  }
-
   const hashedPassword: string = await bcrypt.hash(payload.password, 12);
 
   await prisma.user.update({
     where: {
-      email: payload.email,
+      email: verifiedUser?.email,
     },
     data: {
       password: hashedPassword,
