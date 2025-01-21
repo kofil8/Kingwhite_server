@@ -17,7 +17,7 @@ router.post(
 router.post(
   "/verify-otp",
   validateRequest(UserValidations.verifyOtp),
-  UserControllers.verifyOtp
+  UserControllers.verifyOtpLogin
 );
 
 // user logout route

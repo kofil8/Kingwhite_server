@@ -24,4 +24,16 @@ const logoutUser = catchAsync(async (req, res) => {
   });
 });
 
-export const AuthControllers = { loginUser, logoutUser };
+const verifyOtp = catchAsync(async (req, res) => {
+  const email = req.body.email;
+  const otp = req.body.otp;
+  const result = await AuthServices.verifyOtpLogin({ email, otp });
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    message: "OTP verified successfully",
+    data: result,
+  });
+});
+
+export const AuthControllers = { loginUser, logoutUser, verifyOtp };

@@ -56,6 +56,7 @@ model User {
   profiles Profile[]
   goals    Goal[]
 
+  isLogged         Boolean            @default(false)
   isOnline         Boolean            @default(false)
   Investment       Investment[]
   SavingsPlan      SavingsPlan[]

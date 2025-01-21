@@ -61,6 +61,87 @@ const loginUserFromDB = async (payload: {
   return "Please check your email for OTP";
 };
 
+const verifyOtpLogin = async (payload: {
+  fcpmToken?: string;
+  email: string;
+  otp: number;
+}) => {
+  // Check if the user exists
+  const userData = await prisma.user.findUniqueOrThrow({
+    where: {
+      email: payload.email,
+    },
+  });
+
+  if (!userData) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "User not found");
+  }
+
+  // Check if the OTP is valid
+  const otpData = await prisma.otp.findFirst({
+    where: {
+      email: payload.email,
+    },
+  });
+
+  console.log(payload.otp, otpData?.otp);
+
+  if (otpData?.otp !== payload.otp) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid OTP");
+  }
+
+  if (otpData?.expiry < new Date()) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "OTP has expired");
+  }
+
+  if (userData.status !== "ACTIVE") {
+    await prisma.user.update({
+      where: {
+        id: userData.id,
+      },
+      data: {
+        status: "ACTIVE",
+        isOnline: true,
+      },
+    });
+  }
+
+  // Remove the OTP after successful verification
+  await prisma.otp.delete({
+    where: {
+      id: otpData.id,
+    },
+  });
+
+  // Update the FCM token if provided
+  if (payload?.fcpmToken) {
+    await prisma.user.update({
+      where: {
+        email: payload.email,
+      },
+      data: {
+        fcmToken: payload.fcpmToken,
+      },
+    });
+  }
+
+  // Generate an access token
+  const accessToken = generateToken(
+    {
+      id: userData.id,
+      email: userData.email as string,
+      role: userData.role,
+    },
+    config.jwt.jwt_secret as Secret,
+    config.jwt.expires_in as string
+  );
+
+  return {
+    message: "OTP verified successfully",
+    accessToken,
+  };
+};
+
 const logoutUser = async (id: string) => {
   const userData = await prisma.user.findUnique({
     where: {
@@ -88,4 +169,4 @@ const logoutUser = async (id: string) => {
   return;
 };
 
-export const AuthServices = { loginUserFromDB, logoutUser };
+export const AuthServices = { loginUserFromDB, logoutUser, verifyOtpLogin };
