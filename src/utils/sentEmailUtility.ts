@@ -1,4 +1,4 @@
-import { env } from "process";
+// import { env } from "process";
 import nodemailer from "nodemailer";
 import smtpTransporter from "nodemailer-smtp-transport";
 
@@ -12,8 +12,8 @@ let sentEmailUtility = async (
     smtpTransporter({
       service: "Gmail",
       auth: {
-        user: "jahidhasanbabu7821@gmail.com",
-        pass: env.EMAIL_PASSWORD,
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
       },
     })
   );

@@ -1,12 +1,11 @@
 import { User } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import httpStatus from "http-status";
-import { Secret } from "jsonwebtoken";
-import config from "../../../config";
 import ApiError from "../../../errors/ApiErrors";
-import { generateToken } from "../../../utils/generateToken";
+import { emailTemplate } from "../../../helpars/emailtempForOTP";
 import prisma from "../../../shared/prisma";
 import sentEmailUtility from "../../../utils/sentEmailUtility";
+import { text } from "body-parser";
 
 interface UserWithOptionalPassword extends Omit<User, "password"> {
   password?: string;
@@ -32,15 +31,28 @@ const registerUserIntoDB = async (payload: any) => {
     },
   });
 
-  const accessToken = generateToken(
-    {
-      id: user.id,
-      email: user.email as string,
-      role: user.role,
+  // Generate OTP
+  const otp = Math.floor(100000 + Math.random() * 900000); // 6-digit OTP
+
+  const emailSubject = "OTP Verification for Registration";
+
+  // Plain text version
+  const emailText = `Your OTP is: ${otp}`;
+
+  const textForRegistration = `Thank you for registering with All2Save. To complete your registration, please verify your email address by entering the verification code below.`;
+
+  // HTML content for the email design
+  const emailHTML = emailTemplate(otp, textForRegistration);
+
+  // Send email with both plain text and HTML
+  await sentEmailUtility(payload.email, emailSubject, emailText, emailHTML);
+
+  await prisma.otp.create({
+    data: {
+      email: payload.email,
+      otp,
     },
-    config.jwt.jwt_secret as Secret,
-    config.jwt.expires_in as string
-  );
+  });
 
   return {
     id: user.id,
@@ -49,7 +61,6 @@ const registerUserIntoDB = async (payload: any) => {
     email: user.email,
     role: user.role,
     status: user.status,
-    accessToken: accessToken,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
@@ -208,60 +219,15 @@ const forgotPassword = async (payload: { email: string }) => {
   // Generate OTP
   const otp = Math.floor(100000 + Math.random() * 900000); // 6-digit OTP
 
-  const emailSubject = "OTP Verification";
+  const emailSubject = "OTP Verification for Password Reset";
 
   // Plain text version
   const emailText = `Your OTP is: ${otp}`;
 
+  const textForResetPassword = `We have received a request to reset your password. Please enter the verification code to reset your password.`;
+
   // HTML content for the email design
-  const emailHTML = `
-    <table cellpadding="0" cellspacing="0" align="center" style="width:100%; table-layout:fixed; background-color:#f5f5f5;">
-        <tr>
-            <td align="center">
-                <table cellpadding="0" cellspacing="0" style="background-color:#ffffff; width:600px; border-collapse:collapse;">
-                    <tr>
-                        <td align="center" style="padding:30px 20px;">
-                            <img src="https://i.ibb.co/yVsctTq/file-1.png" alt="Logo" width="200" style="display:block; border:0;"/>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td align="center" style="padding:10px 20px;">
-                            <h3 style="margin:0; font-family:'Arial', sans-serif; font-size:46px; font-weight:bold; color:#333;">
-                                Reset Password
-                            </h3>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td align="center" style="padding:5px 40px;">
-                            <p style="margin:0; font-family:'Arial', sans-serif; font-size:14px; color:#333;">
-                                We received a request to reset your UIPtv Account password.
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td align="center" style="padding:10px 20px;">
-                            <table cellpadding="0" cellspacing="0" style="width:100%; border:2px dashed #ccc; border-radius:5px;">
-                                <tr>
-                                    <td align="center" style="padding:20px;">
-                                        <h3 style="margin:0; font-family:'Arial', sans-serif; font-size:26px; font-weight:bold; color:#333;">
-                                            Your verification code is:
-                                        </h3>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td align="center" style="padding:10px 20px;">
-                                        <h1 style="margin:0; font-family:'Arial', sans-serif; font-size:46px; font-weight:bold; color:#5c68e2;">
-                                            ${otp}
-                                        </h1>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>`;
+  const emailHTML = emailTemplate(otp, textForResetPassword);
 
   // Send email with both plain text and HTML
   await sentEmailUtility(payload.email, emailSubject, emailText, emailHTML);
@@ -314,6 +280,16 @@ const verifyOtp = async (payload: { email: string; otp: number }) => {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid OTP");
   }
 
+  // Update the user's status to "ACTIVE"
+  await prisma.user.update({
+    where: {
+      id: userData.id,
+    },
+    data: {
+      status: "ACTIVE",
+    },
+  });
+
   // Remove the OTP after successful verification
   await prisma.otp.delete({
     where: {
@@ -321,7 +297,7 @@ const verifyOtp = async (payload: { email: string; otp: number }) => {
     },
   });
 
-  return;
+  return "Now you can reset your password";
 };
 
 const changePassword = async (payload: any) => {

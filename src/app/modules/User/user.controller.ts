@@ -10,7 +10,8 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
-    message: "User registered successfully",
+    message:
+      "OTP sent successfully to your email, please check your email for OTP.",
     data: result,
   });
 });
