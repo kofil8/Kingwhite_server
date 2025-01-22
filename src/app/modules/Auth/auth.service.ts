@@ -4,6 +4,9 @@ import ApiError from "../../../errors/ApiErrors";
 import prisma from "../../../shared/prisma";
 import { emailTemplate } from "../../../helpars/emailtempForOTP";
 import sentEmailUtility from "../../../utils/sentEmailUtility";
+import config from "../../../config";
+import { generateToken } from "../../../utils/generateToken";
+import { Secret } from "jsonwebtoken";
 
 const loginUserFromDB = async (payload: {
   email: string;
@@ -38,6 +41,8 @@ const loginUserFromDB = async (payload: {
   // Plain text version
   const emailText = `Your OTP is: ${otp}`;
 
+  const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+
   const textForLogin = `Welcome back! Please use the following OTP to login to your account`;
 
   // HTML content for the email design
@@ -45,9 +50,6 @@ const loginUserFromDB = async (payload: {
 
   // Send email with both plain text and HTML
   await sentEmailUtility(payload.email, emailSubject, emailText, emailHTML);
-
-  // Set OTP expiry date (e.g., 10 minutes from now)
-  const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
   await prisma.otp.create({
     data: {
@@ -66,7 +68,6 @@ const verifyOtpLogin = async (payload: {
   email: string;
   otp: number;
 }) => {
-  // Check if the user exists
   const userData = await prisma.user.findUniqueOrThrow({
     where: {
       email: payload.email,
@@ -77,14 +78,11 @@ const verifyOtpLogin = async (payload: {
     throw new ApiError(httpStatus.BAD_REQUEST, "User not found");
   }
 
-  // Check if the OTP is valid
   const otpData = await prisma.otp.findFirst({
     where: {
       email: payload.email,
     },
   });
-
-  console.log(payload.otp, otpData?.otp);
 
   if (otpData?.otp !== payload.otp) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid OTP");
@@ -106,14 +104,12 @@ const verifyOtpLogin = async (payload: {
     });
   }
 
-  // Remove the OTP after successful verification
   await prisma.otp.delete({
     where: {
       id: otpData.id,
     },
   });
 
-  // Update the FCM token if provided
   if (payload?.fcpmToken) {
     await prisma.user.update({
       where: {

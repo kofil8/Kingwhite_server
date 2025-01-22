@@ -352,7 +352,6 @@ const verifyResetOtp = async (payload: { email: string; otp: number }) => {
     throw new ApiError(httpStatus.BAD_REQUEST, "OTP has expired");
   }
 
-  // Remove the OTP after successful verification
   await prisma.otp.delete({
     where: {
       id: otpData.id,

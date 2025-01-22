@@ -2,8 +2,6 @@ import express from "express";
 import validateRequest from "../../middlewares/validateRequest";
 import { authValidation } from "./auth.validation";
 import { AuthControllers } from "./auth.controller";
-import { UserValidations } from "../User/user.validation";
-import { UserControllers } from "../User/user.controller";
 import auth from "../../middlewares/auth";
 
 const router = express.Router();
@@ -16,8 +14,8 @@ router.post(
 
 router.post(
   "/verify-otp",
-  validateRequest(UserValidations.verifyOtp),
-  UserControllers.verifyOtpLogin
+  validateRequest(authValidation.verifyOtpLogin),
+  AuthControllers.verifyOtp
 );
 
 // user logout route

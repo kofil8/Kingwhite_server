@@ -15,4 +15,19 @@ const loginUser = z.object({
   }),
 });
 
-export const authValidation = { loginUser };
+const verifyOtpLogin = z.object({
+  body: z.object({
+    email: z
+      .string({
+        required_error: "Email is required!",
+      })
+      .email({
+        message: "Invalid email format!",
+      }),
+    otp: z.number({
+      required_error: "OTP is required!",
+    }),
+  }),
+});
+
+export const authValidation = { loginUser, verifyOtpLogin };

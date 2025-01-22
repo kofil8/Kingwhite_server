@@ -9,11 +9,11 @@ import prisma from "../../../shared/prisma";
 //   const user = await prisma.user.findUnique({ where: { email } });
 
 //   if (!user) {
-//     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+//     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
 //   }
 
-//   if ('password' in updates) {
-//     throw new ApiError(httpStatus.BAD_REQUEST, 'updates are not allowed');
+//   if ("password" in updates) {
+//     throw new ApiError(httpStatus.BAD_REQUEST, "updates are not allowed");
 //   }
 
 //   const { firstName, lastName } = updates;
